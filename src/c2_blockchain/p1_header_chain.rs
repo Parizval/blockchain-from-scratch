@@ -25,12 +25,24 @@ pub struct Header {
 impl Header {
     /// Returns a new valid genesis header.
     fn genesis() -> Self {
-        todo!("Exercise 1")
+        Self {
+            parent: 0,
+            height: 0,
+            extrinsics_root: (),
+            state_root: (),
+            consensus_digest: (),
+        }
     }
 
     /// Create and return a valid child header.
     fn child(&self) -> Self {
-        todo!("Exercise 2")
+        Self {
+            parent: hash(&self),
+            height: self.height + 1,
+            extrinsics_root: (),
+            state_root: (),
+            consensus_digest: (),
+        }
     }
 
     /// Verify that all the given headers form a valid chain from this header to the tip.
@@ -38,7 +50,20 @@ impl Header {
     /// This method may assume that the block on which it is called is valid, but it
     /// must verify all of the blocks in the slice;
     fn verify_sub_chain(&self, chain: &[Header]) -> bool {
-        todo!("Exercise 3")
+        let mut block_hash = hash(self);
+        let mut block_height = self.height;
+        // println!("Function:{:?}", chain);
+        let mut result = true;
+        chain.iter().for_each(|x| {
+            // println!("Left:{}, RIGHt: {}", block_hash, x.parent);
+            block_height += 1;
+            if block_hash == x.parent && x.height == block_height {
+                block_hash = hash(x)
+            } else {
+                result = false;
+            }
+        });
+        result
     }
 }
 
@@ -46,14 +71,30 @@ impl Header {
 
 /// Build and return a valid chain with exactly five blocks including the genesis block.
 fn build_valid_chain_length_5() -> Vec<Header> {
-    todo!("Exercise 4")
+    let mut g = Header::genesis();
+    let mut result: Vec<Header> = vec![g.clone()];
+
+    for i in 1..5 {
+        g = g.child().clone();
+        result.insert(i, g.clone());
+    }
+
+    result
 }
 
 /// Build and return a chain with at least three headers.
 /// The chain should start with a proper genesis header,
 /// but the entire chain should NOT be valid.
 fn build_an_invalid_chain() -> Vec<Header> {
-    todo!("Exercise 5")
+    let mut g = Header::genesis();
+    let mut result: Vec<Header> = vec![g.clone()];
+
+    for i in 1..5 {
+        g = g.child().clone();
+        result.insert(i, g.clone());
+    }
+    result[3].parent = 0;
+    result
 }
 
 // To run these tests: `cargo test bc_1
@@ -116,8 +157,9 @@ fn bc_1_cant_verify_invalid_parent() {
     // not to give away the solution to writing that function.
     let g = Header::genesis();
     let mut b1 = g.child();
+    // println!("Before:{:?}", b1);
     b1.parent = 10;
-
+    // println!("{:?}", g.verify_sub_chain(&[b1.clone()]));
     assert!(!g.verify_sub_chain(&[b1]))
 }
 
@@ -126,6 +168,7 @@ fn bc_1_verify_chain_length_five() {
     // This test chooses to use the student's own verify function.
     // This should be relatively safe given that we have already tested that function.
     let chain = build_valid_chain_length_5();
+    println!("Chain: {:#?}", chain);
     assert!(chain[0].verify_sub_chain(&chain[1..]))
 }
 
